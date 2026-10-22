@@ -1,0 +1,103 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroSequence from '../components/HeroSequence.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { getCollection } from 'astro:content';
+import { profile } from '../data/profile';
+const projects = (await getCollection('projects'))
+  .filter((project) => project.data.featured)
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, 2);
+const disciplines = [
+  'SOFTWARE ENGINEERING',
+  'FULL-STACK PRODUCTS',
+  'SYSTEM ARCHITECTURE',
+  'DATA ENGINEERING',
+  'BACKEND SYSTEMS',
+  'REAL-TIME DATA',
+  'PRODUCT ENGINEERING',
+  'INTERACTIVE EXPERIENCES',
+];
+// Engineering-focused technology cloud based on supplied skills and project evidence.
+// Full project-specific details belong on the dedicated Work pages.
+const skills = [
+  'PYTHON', 'TYPESCRIPT', 'JAVASCRIPT', 'C++', 'C#', 'JAVA',
+  'DART', 'REACT', 'NEXT.JS', 'FASTAPI', 'FLASK', 'NODE.JS',
+  'ASTRO', 'GSAP', 'POSTGRESQL', 'SQLITE', 'MONGODB', 'MYSQL',
+  'SQL SERVER', 'REST APIs', 'WEBSOCKETS', 'DATA LAKES',
+  'DATA PIPELINES', 'PARQUET', 'DUCKDB', 'REAL-TIME DATA',
+  'SYSTEM DESIGN', 'PERFORMANCE', 'GIT', 'GITHUB',
+  'PYTEST', 'API INTEGRATION'
+];
+// Semantic accent balance across all four orb rows (not random nth-child fills).
+const coreHighlights = new Set([
+  'PYTHON', 'REACT', 'FASTAPI', 'POSTGRESQL', 'MONGODB',
+  'WEBSOCKETS', 'DATA LAKES', 'DUCKDB', 'GIT',
+]);
+const blueSkills = new Set(['TYPESCRIPT', 'C#', 'SQL SERVER', 'DUCKDB', 'REAL-TIME DATA', 'PYTEST']);
+const amberSkills = new Set(['JAVA', 'DART', 'PARQUET', 'SYSTEM DESIGN']);
+const outlinedSkills = new Set([
+  'C++', 'DART', 'NEXT.JS', 'SQLITE', 'MYSQL', 'REST APIs',
+  'PARQUET', 'SYSTEM DESIGN', 'API INTEGRATION',
+]);
+
+---
+<BaseLayout title={`${profile.name} — Software Engineer & Full-Stack Product Builder`} description={`Official portfolio of ${profile.name} (SM Tafseer). Explore selected software products, full-stack applications and engineering projects.`} isProfile>
+  <HeroSequence />
+
+  <section class="marquee-rail" aria-label="Engineering disciplines">
+    <div class="marquee-track">
+      {[0, 1].map((copy) => (
+        <div class="marquee-set" aria-hidden={copy === 1 ? 'true' : undefined}>
+          {disciplines.map((label) => <div class="marquee-item"><span>{label}</span><b aria-hidden="true">✳</b></div>)}
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="work" class="section work-section container home-featured" aria-labelledby="work-heading">
+    <div class="section-heading" data-reveal>
+      <div class="section-kicker"><span>01</span> / FEATURED PROJECTS</div>
+      <div class="section-heading-line">
+        <h2 id="work-heading">SELECTED<br /><em>WORK.</em></h2>
+        <p>A selection of the products and systems I’ve worked on.</p>
+      </div>
+    </div>
+    <div class="project-grid home-project-grid">
+      {projects.map((project, index) => <ProjectCard project={project} index={index} />)}
+    </div>
+    <div class="home-work-footer home-work-footer--statement" data-reveal>
+      <div class="home-work-lead"><span class="section-kicker">BEYOND THE HIGHLIGHTS</span><p>There’s more to the work.</p></div>
+      <a class="home-work-cta" href="/work/" aria-label="Explore all my work and projects">
+        <span class="home-work-cta-label"><small>THE COMPLETE PROJECT INDEX</small><strong>EXPLORE <em>MY WORK</em></strong></span>
+        <span class="home-work-cta-arrow" aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-skills home-skills--orbs" aria-labelledby="home-skills-title">
+    <div class="container home-skills-inner">
+      <div class="home-skills-layout">
+        <div class="home-skills-copy" data-reveal>
+          <p class="section-kicker"><span>02</span> / ENGINEERING & TECHNOLOGIES</p>
+          <h2 id="home-skills-title">THE<br /><em>TOOLKIT.</em></h2>
+          <p class="home-skills-description">From interfaces to data infrastructure — the tools behind my work.</p>
+        </div>
+        <div class="skill-orb-field" data-skill-field>
+          <span class="skill-orb-field-ring skill-orb-field-ring--one" aria-hidden="true"></span>
+          <span class="skill-orb-field-ring skill-orb-field-ring--two" aria-hidden="true"></span>
+          <ul class="skill-orb-list" aria-label="Languages, frameworks, platforms and technical tools">
+            {skills.map((skill) => (
+              <li
+                class:list={['skill-orb', coreHighlights.has(skill) && 'skill-orb--red', outlinedSkills.has(skill) && 'skill-orb--outline', blueSkills.has(skill) && 'skill-orb--blue', amberSkills.has(skill) && 'skill-orb--amber', skill.length > 11 ? 'skill-orb--wide' : skill.length > 8 ? 'skill-orb--medium' : 'skill-orb--compact']}
+                data-skill-orb
+              >{skill}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+</BaseLayout>

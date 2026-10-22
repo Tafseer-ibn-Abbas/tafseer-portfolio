@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { profile } from '../../data/profile';
+const principles = [
+  { index: '01', title: 'UNDERSTAND THE SYSTEM', text: 'Before writing a solution, I work to understand the actual problem, its constraints, and how each part connects.' },
+  { index: '02', title: 'BUILD THE HARD PARTS', text: 'Backend logic, data pipelines, reliability and application architecture are the challenges I genuinely enjoy.' },
+  { index: '03', title: 'MAKE IT USABLE', text: 'Good engineering should feel clear to the person using it. The experience and the underlying system need to work together.' }
+];
+---
+<BaseLayout
+  title={`About ${profile.name} — Software Engineer`}
+  description={`Learn about ${profile.name} (SM Tafseer): software engineer in Karachi, BSCS student at SSUET, and TechSphere full-stack development intern.`}
+>
+  <section class="bio-hero" data-page-interactions aria-labelledby="about-heading">
+    <div class="container bio-hero-inner">
+      <p class="section-kicker" data-reveal>01 / ABOUT THE ENGINEER</p>
+      <h1 id="about-heading" data-reveal>BEYOND THE<br /><em>INTERFACE.</em></h1>
+      <div class="bio-hero-bottom" data-reveal>
+        <p>I’m {profile.name}. I work across full-stack applications and complex software systems — especially the problems that take some digging to solve.</p>
+        <a href="#my-story" class="bio-scroll-link">GET TO KNOW ME <span aria-hidden="true">↓</span></a>
+      </div>
+      <div class="bio-hero-outline" aria-hidden="true">SM.</div>
+    </div>
+  </section>
+
+  <section class="container bio-story bio-content" id="my-story" aria-labelledby="story-title">
+    <div class="bio-rail" data-reveal><span class="section-kicker">THE SHORT VERSION</span><span class="bio-rail-marker">[ 01—03 ]</span></div>
+    <div class="bio-story-text" data-reveal>
+      <h2 id="story-title">WHAT DRIVES<br /><em>MY WORK.</em></h2>
+      {profile.about.map((paragraph) => <p>{paragraph}</p>)}
+      <div class="bio-story-links"><a href="/work/">EXPLORE PROJECTS <span aria-hidden="true">↗</span></a><a href="/contact/">LET'S CONNECT <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </section>
+
+  <section class="bio-approach" aria-labelledby="approach-heading">
+    <div class="container">
+      <div class="bio-section-head" data-reveal>
+        <p class="section-kicker">02 / MY APPROACH</p>
+        <h2 id="approach-heading">THE WAY<br /><em>I WORK.</em></h2>
+        <p>No one-size-fits-all recipe. I start with the problem and build the right system around it.</p>
+      </div>
+      <div class="bio-principles">
+        {principles.map((item) => (
+          <article class="bio-principle" data-approach-card>
+            <span class="bio-principle-index">{item.index} /</span>
+
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="container bio-journey" aria-labelledby="journey-heading">
+    <div class="bio-section-head" data-reveal>
+      <p class="section-kicker">03 / THE JOURNEY</p>
+      <h2 id="journey-heading">EDUCATION.<br /><em>EXPERIENCE.</em></h2>
+      <p>The academic foundation and hands-on experience behind the work.</p>
+    </div>
+    <div class="bio-timeline">
+      <article class="bio-timeline-row" data-timeline-item>
+        <span class="bio-timeline-year">2024 — 2028 <small>EXPECTED</small></span>
+        <div class="bio-timeline-body"><p class="bio-item-tag">EDUCATION</p><h3>BS COMPUTER SCIENCE</h3><p>Sir Syed University of Engineering & Technology (SSUET)</p><span>Karachi, Pakistan · Admitted 2024 · Expected graduation 2028</span></div>
+
+      </article>
+      <article class="bio-timeline-row" data-timeline-item>
+        <span class="bio-timeline-year">MAR — APR <small>2026</small></span>
+        <div class="bio-timeline-body"><p class="bio-item-tag">EXPERIENCE / CERTIFICATION</p><h3>FULL-STACK DEVELOPMENT INTERN</h3><p>TechSphere</p><span>2 March – 30 April 2026 · Internship completed</span><p class="bio-timeline-note">Worked on a learning and services platform involving a React frontend, backend APIs and database-driven workflows.</p></div>
+
+      </article>
+      <article class="bio-timeline-row" data-timeline-item>
+        <span class="bio-timeline-year">ONGOING <small>R&D</small></span>
+        <div class="bio-timeline-body"><p class="bio-item-tag">INDEPENDENT ENGINEERING</p><h3>TRADEMIND</h3><p>Financial market data and quantitative research infrastructure</p><span>Private project · Active engineering and research</span><p class="bio-timeline-note">Working across data ingestion, storage, full-stack interfaces and reliability-oriented architecture.</p></div>
+
+      </article>
+    </div>
+  </section>
+
+  <section class="bio-outro" aria-labelledby="bio-outro-title">
+    <div class="container bio-outro-inner" data-reveal>
+      <p class="section-kicker">CURIOUS WHAT THAT LOOKS LIKE?</p>
+      <h2 id="bio-outro-title">SEE WHAT<br /><em>I BUILD.</em></h2>
+      <a href="/work/" class="bio-outro-link">EXPLORE THE WORK <span aria-hidden="true">↗</span></a>
+    </div>
+  </section>
+</BaseLayout>

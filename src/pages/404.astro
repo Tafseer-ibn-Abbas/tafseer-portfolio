@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { profile } from '../data/profile';
+---
+<BaseLayout title={`Page Not Found — ${profile.name}`} description="That page is not available. Return to the portfolio or explore the work." noindex>
+  <section class="missing container" aria-labelledby="missing-title">
+    <p class="section-kicker">PAGE NOT FOUND / 404</p>
+    <h1 id="missing-title">LOST<span>?</span></h1>
+    <p>This link may have changed, or the page may no longer exist. You can get back to the portfolio below.</p>
+    <div class="missing-actions"><a href="/">BACK HOME ↗</a><a href="/work/">EXPLORE WORK ↗</a></div>
+  </section>
+</BaseLayout>
+<style>
+.missing{min-height:70svh;padding-top:clamp(170px,17vw,245px);padding-bottom:100px}
+.missing h1{font:900 clamp(100px,19vw,245px)/.9 Impact,'Arial Narrow',sans-serif;letter-spacing:-.055em;margin:26px 0}
+.missing h1 span{color:var(--red)}
+.missing>p:not(.section-kicker){max-width:550px;color:#cfc0c4;line-height:1.75;font-size:18px}
+.missing-actions{display:flex;gap:24px;flex-wrap:wrap;margin-top:43px}
+.missing-actions a{display:inline-block;padding:16px 22px;border:1px solid rgba(255,255,255,.36);font-weight:900;font-size:12px;letter-spacing:.07em}
+.missing-actions a:hover{border-color:var(--red)}
+</style>

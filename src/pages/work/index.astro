@@ -1,0 +1,139 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { profile } from '../../data/profile';
+import { workShowcase } from '../../data/workShowcase';
+
+// Content-driven: adding a valid Markdown project automatically places it in the index.
+const projects = (await getCollection('projects'))
+  .filter(project => project.data.status !== 'Case study in preparation')
+  .sort((a,b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title));
+const featured = projects.find(project => project.id === 'trademind');
+const others = projects.filter(project => project.id !== 'trademind');
+const display = (id:string) => workShowcase[id] || {type:'Software Project',eyebrow:'PROJECT',short:'Explore the project and the work behind it.',availability:'Case study'};
+---
+<BaseLayout
+  title={`Work & Case Studies — ${profile.name}`}
+  description={`Explore the software, systems and digital products built by ${profile.name}: full-stack applications, financial data infrastructure, client websites and desktop projects.`}
+>
+  <section class="work-opening" aria-labelledby="work-title">
+    <div class="container work-opening-inner">
+      <p class="section-kicker">WORK <span aria-hidden="true">/</span> SOFTWARE & SYSTEMS</p>
+      <h1 id="work-title">THE WORK<span>.</span></h1>
+      <p>From complex infrastructure to everyday digital products. Explore the projects, the problems they solve, and the thinking behind each build.</p>
+    </div>
+  </section>
+
+  {featured && <section class="container work-spotlight" aria-labelledby="work-featured-title">
+    <div class="work-section-label"><span class="section-kicker">FEATURED ENGINEERING WORK</span></div>
+    <a href={`/projects/${featured.id}/`} class="work-spotlight-link" aria-label={`Read ${featured.data.title} case study`}>
+      <div class="work-spotlight-copy">
+        <span class="work-type">{display(featured.id).eyebrow}</span>
+        <h2 id="work-featured-title">{featured.data.title}<em>.</em></h2>
+        <p class="work-tagline">{display(featured.id).short}</p>
+        <span class="work-status">{display(featured.id).availability}</span>
+        <span class="work-action">VIEW CASE STUDY <span aria-hidden="true">↗</span></span>
+      </div>
+      <div class="work-spotlight-media">
+        {featured.data.cover && <img src={featured.data.cover} alt="TradeMind financial market interface illustration (concept)" loading="eager" decoding="async" data-portfolio-image />}
+        <span>INTERFACE CONCEPT · NOT A LIVE SCREENSHOT</span>
+      </div>
+    </a>
+  </section>}
+
+  <section class="container work-all" id="projects" aria-labelledby="work-all-title">
+    <div class="work-all-heading">
+      <h2 id="work-all-title">MORE <em>PROJECTS.</em></h2>
+      <p>Pick a project to see what it does, how it was built and where you can explore it.</p>
+    </div>
+    <div class="work-grid">
+      {others.map(project => (
+        <article class="work-card">
+          <a class="work-card-link" href={`/projects/${project.id}/`} aria-label={`View ${project.data.title} case study`}>
+            <div class="work-card-head">
+              <span class="work-type">{display(project.id).type}</span>
+              <h3>{project.data.title}</h3>
+              <p>{display(project.id).short}</p>
+            </div>
+            <div class:list={["work-card-media", `work-card-media--${project.id}`]}>
+              {project.data.cover ? <img src={project.data.cover} alt={`${project.data.title} application preview`} loading="lazy" decoding="async" data-portfolio-image /><span class="work-card-media-fallback" aria-hidden="true">{project.data.title}</span> : <span class="work-card-empty" aria-hidden="true">{project.data.title}</span>}
+            </div>
+            <div class="work-card-bottom"><span>{display(project.id).availability}</span><strong>VIEW CASE STUDY <span aria-hidden="true">↗</span></strong></div>
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+  <div class="work-end container"><p>Each case study reflects its actual scope—client work, independently built software, internships, collaborative coursework or private research.</p></div>
+</BaseLayout>
+<script>
+  // External screenshots can fail independently of this website. Preserve a useful fallback.
+  document.querySelectorAll<HTMLImageElement>('[data-portfolio-image]').forEach((img) => {
+    const fail = () => img.classList.add('is-unavailable');
+    img.addEventListener('error', fail, { once: true });
+    if (img.complete && img.naturalWidth === 0) fail();
+  });
+</script>
+
+<style>
+  .work-opening{border-bottom:1px solid rgba(255,255,255,.12);background:radial-gradient(ellipse at 80% 10%,rgba(147,29,47,.15),transparent 56%),#0e0a0e;padding:clamp(118px,10vw,145px) 0 clamp(40px,5vw,62px)}
+  .work-opening-inner{max-width:1510px}
+  .work-opening .section-kicker{letter-spacing:.19em}
+  .work-opening .section-kicker span{color:var(--red);padding:0 10px}
+  .work-opening h1{font:900 clamp(80px,11vw,168px)/.91 Impact,'Arial Narrow',Arial,sans-serif;letter-spacing:-.048em;margin:29px 0 18px}
+  .work-opening h1 span{color:var(--red)}
+  .work-opening-inner>p:last-child{color:#cbbbc0;max-width:710px;font-size:clamp(15px,1.35vw,19px);line-height:1.65;margin:0}
+  .work-spotlight{padding-top:50px}
+  .work-section-label{margin-bottom:23px}
+  .work-spotlight-link{display:grid;grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr);min-height:390px;background:linear-gradient(120deg,#1e1017,#0b111b);border:1px solid rgba(255,255,255,.2);overflow:hidden;transition:border-color .25s ease,transform .3s ease}
+  .work-spotlight-link:hover,.work-spotlight-link:focus-visible{border-color:#f35c68;transform:translateY(-3px)}
+  .work-spotlight-copy{padding:clamp(32px,4vw,66px);display:flex;flex-direction:column;align-items:flex-start;position:relative;z-index:1}
+  .work-type{color:#eb8992;font-size:10px;line-height:1.5;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+  .work-spotlight-copy h2{font:900 clamp(63px,6.2vw,115px)/.98 Impact,'Arial Narrow',Arial,sans-serif;letter-spacing:-.04em;margin:24px 0 15px}
+  .work-spotlight-copy h2 em{color:var(--red);font-style:normal}
+  .work-tagline{font-size:clamp(15px,1.35vw,19px);line-height:1.6;color:#e0d3d8;max-width:490px;margin:0}
+  .work-status{margin-top:20px;font-size:12px;color:#b29fa7}
+  .work-action{margin-top:auto;display:inline-flex;justify-content:space-between;gap:40px;align-items:center;border-bottom:2px solid var(--red);font-weight:900;letter-spacing:.13em;font-size:11px;padding:30px 0 12px}
+  .work-action span{font-size:20px;color:var(--red)}
+  .work-spotlight-media{position:relative;min-height:350px;overflow:hidden;background:linear-gradient(155deg,#07304a,#081119)}
+  .work-spotlight-media img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;object-position:top center;transition:transform .65s cubic-bezier(.2,.7,.2,1)}
+  .work-spotlight-link:hover img{transform:scale(1.035)}
+  .work-spotlight-media:after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(0deg,rgba(2,7,14,.75),transparent);pointer-events:none}
+  .work-spotlight-media span{position:absolute;bottom:20px;left:24px;right:20px;color:#fff;font-size:10px;letter-spacing:.1em;font-weight:800;z-index:1;text-shadow:0 2px 8px #000}
+  .work-all{padding-top:clamp(67px,8vw,100px)}
+  .work-all-heading{display:flex;justify-content:space-between;align-items:end;gap:30px;margin-bottom:40px}
+  .work-all-heading h2{font:900 clamp(49px,5.5vw,92px)/1 Impact,'Arial Narrow',Arial,sans-serif;letter-spacing:-.04em;margin:0}
+  .work-all-heading h2 em{font-style:normal;color:transparent;-webkit-text-stroke:1.4px var(--red)}
+  .work-all-heading p{max-width:350px;font-size:14px;line-height:1.65;color:#bbaeb2;margin:0}
+  .work-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:23px}
+  .work-card{min-width:0}
+  .work-card-link{height:100%;min-width:0;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.15);background:#151015;overflow:hidden;transition:border-color .25s ease,transform .25s ease}
+  .work-card-link:hover,.work-card-link:focus-visible{border-color:var(--red);transform:translateY(-3px)}
+  .work-card-head{padding:27px clamp(22px,2.5vw,36px) 21px;min-height:181px}
+  .work-card-head h3{font:900 clamp(41px,4vw,67px)/1 Impact,'Arial Narrow',Arial,sans-serif;letter-spacing:-.035em;margin:10px 0 9px;overflow-wrap:anywhere}
+  .work-card-head p{font-size:13px;line-height:1.65;color:#b8a9ad;max-width:535px;margin:0}
+  .work-card-media{position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,#171b23,#0c1017);border-top:1px solid rgba(255,255,255,.11);border-bottom:1px solid rgba(255,255,255,.11);overflow:hidden}
+  .work-card-media img{width:100%;height:100%;object-fit:contain;object-position:center;transition:transform .4s ease;position:relative;z-index:1}.work-card-media-fallback{position:absolute;inset:0;display:grid;place-items:center;font:900 clamp(25px,3vw,52px) Impact,Arial,sans-serif;color:#d9c4c9;letter-spacing:-.02em;padding:24px;text-align:center}
+  .work-card-link:hover .work-card-media img{transform:scale(1.015)}
+  .work-card-media--easybank-cpp-banking-system,.work-card-media--shos-operating-systems-simulator{background:#111923}
+  .work-card-media--librarydesk-winforms{background:#19212a}
+  .work-card-media--omnisyllabo{background:#101522}
+  .work-card-media--techsphere{background:#142037}
+  .work-card-media img.is-unavailable{display:none}
+  .work-card-empty{height:100%;display:grid;place-items:center;font:900 50px Impact,'Arial Narrow',sans-serif;text-align:center;padding:16px;color:#f1e4e7}
+  .work-card-bottom{margin-top:auto;padding:22px clamp(22px,2.5vw,36px);display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+  .work-card-bottom>span{font-size:11px;color:#bdaab0}
+  .work-card-bottom strong{font-size:10px;letter-spacing:.08em;color:#eee5e5;white-space:nowrap}
+  .work-card-bottom strong span{font-size:16px;color:var(--red);padding-left:10px}
+  .work-end{padding-top:38px;padding-bottom:100px;border-top:1px solid rgba(255,255,255,.11);margin-top:85px}
+  .work-end p{font-size:12px;color:#a6979c;line-height:1.8;max-width:790px}
+  @media(max-width:980px){.work-spotlight-link{grid-template-columns:1fr}.work-spotlight-copy{min-height:310px}.work-spotlight-media{height:340px;min-height:0}.work-all-heading{display:block}.work-all-heading p{margin-top:20px}.work-card-head{min-height:195px}}
+  @media(max-width:690px){
+    .work-opening{padding-top:118px;padding-bottom:43px}.work-opening h1{font-size:clamp(69px,16vw,111px);margin:24px 0 15px}.work-opening-inner>p:last-child{font-size:14px}
+    .work-spotlight{padding-top:48px}.work-section-label{margin-bottom:15px}.work-spotlight-copy{padding:26px 22px 27px;min-height:270px}.work-spotlight-copy h2{font-size:clamp(60px,14vw,89px);margin:16px 0 12px}.work-tagline{font-size:14px}.work-spotlight-media{height:205px}.work-spotlight-media span{font-size:8px;left:15px;bottom:13px}
+    .work-all{padding-top:77px}.work-all-heading{margin-bottom:28px}.work-all-heading h2{font-size:clamp(43px,11vw,65px)}
+    .work-grid{grid-template-columns:1fr;gap:21px}.work-card-head{padding:23px 21px 20px;min-height:0}.work-card-head h3{font-size:clamp(38px,10vw,58px)}.work-card-head p{font-size:13px}.work-card-bottom{padding:19px 21px}
+    .work-end{margin-top:55px;padding-bottom:65px}
+  }
+  @media(prefers-reduced-motion:reduce){.work-spotlight-link,.work-card-link,.work-card-media img,.work-spotlight-media img{transition:none!important;transform:none!important}}
+</style>

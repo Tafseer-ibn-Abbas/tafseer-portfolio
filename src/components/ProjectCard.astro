@@ -1,0 +1,20 @@
+---
+import type { CollectionEntry } from 'astro:content';
+interface Props { project: CollectionEntry<'projects'>; index: number; }
+const { project, index } = Astro.props;
+const { title, summary, category, year, cover } = project.data;
+---
+<a href={`/projects/${project.id}/`} class:list={['project-card', index === 0 && 'project-card--large']} data-reveal>
+  <div class:list={['project-art', `project-art--${project.id}`]}>
+    {cover ? <img src={cover} alt={`${title} project preview`} loading="lazy" decoding="async" /> : <div class="project-placeholder" aria-label="Project visuals will be added when available"><div class="project-placeholder-orbit"></div><div class="project-placeholder-word">{title}</div><span>VIEW PROJECT ↗</span></div>}
+    <span class="project-art-index">/0{index + 1}</span>
+    <span class="project-open-icon" aria-hidden="true">↗</span>
+  </div>
+  <div class="project-info"><div><p class="project-meta">{category} {year !== '—' && <span>·</span>} {year !== '—' && year}</p><h3>{title}</h3><p class="project-summary">{summary}</p></div><span class="project-status">EXPLORE PROJECT ↗</span></div>
+</a>
+<style>
+  /* Only the OmniSyllabo preview: preserve the full app hero instead of cutting its headline. */
+  :global(.project-card .project-art--omnisyllabo > img) { object-fit: contain; object-position: center; }
+  :global(.project-art--omnisyllabo) { background: radial-gradient(ellipse at 60% 45%, #192035 0%, #080d16 80%); }
+  @media (hover:hover) { :global(.project-card:hover .project-art--omnisyllabo > img) { transform: none; } }
+</style>

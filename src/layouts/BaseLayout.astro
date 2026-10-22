@@ -1,0 +1,132 @@
+---
+import { profile } from '../data/profile';
+import '../styles/global.css';
+interface Props { title: string; description: string; image?: string; isProfile?: boolean; noindex?: boolean; }
+const { title, description, image = '/og/default.jpg', isProfile = false, noindex = false } = Astro.props;
+const home = Astro.site?.toString() || Astro.url.origin;
+const canonical = new URL(Astro.url.pathname, home).toString();
+const ogImage = new URL(image, home).toString();
+const route = Astro.url.pathname;
+const person = {
+  '@type': 'Person',
+  '@id': new URL('/#person', home).toString(),
+  name: profile.name,
+  alternateName: profile.alternateNames,
+  jobTitle: profile.headline,
+  description: profile.intro,
+  image: new URL('/hero-poster.webp', home).toString(),
+  url: new URL('/',home).toString(),
+  homeLocation: { '@type': 'Place', name: 'Karachi, Pakistan' },
+  knowsAbout: ['Software Engineering', 'Full-Stack Development', 'Web Applications', 'Data Engineering', 'Systems Programming'],
+  sameAs: Object.entries(profile.links)
+    .filter(([key, link]) => key !== 'whatsapp' && link.startsWith('https://'))
+    .map(([, link]) => link)
+};
+const segments = route.split('/').filter(Boolean);
+const breadcrumbLinks = route.startsWith('/projects/')
+  ? [ { name: 'Work', url: new URL('/work/',home).toString() },
+      { name: segments[segments.length-1]?.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()), url: canonical } ]
+  : segments.map((slug,index) => ({
+      name: slug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),
+      url: new URL('/' + segments.slice(0,index+1).join('/') + '/',home).toString()
+    }));
+const breadcrumbs = breadcrumbLinks.length ? {
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: new URL('/',home).toString() },
+    ...breadcrumbLinks.map((link,index) => ({ '@type': 'ListItem', position:index+2, name:link.name, item:link.url }))
+  ]
+} : null;
+const webpage = {
+  '@type': isProfile ? 'ProfilePage' : 'WebPage',
+  '@id': canonical + '#webpage', url: canonical,
+  name: title, description,
+  isPartOf: { '@id': new URL('/#website',home).toString() },
+  ...(isProfile ? { mainEntity: { '@id': person['@id'] } } : {})
+};
+const structuredData = {
+  '@context':'https://schema.org',
+  '@graph':[
+    { '@type':'WebSite', '@id':new URL('/#website',home).toString(), url:new URL('/',home).toString(), name:`${profile.name} — Portfolio`, inLanguage:'en', publisher:{'@id':person['@id']} },
+    webpage,
+    ...(breadcrumbs ? [breadcrumbs] : []),
+    person
+  ]
+};
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b090b" />
+  <meta name="color-scheme" content="dark" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  {noindex && <meta name="robots" content="noindex,follow" />}
+  {!noindex && <meta name="robots" content="index,follow,max-image-preview:large" />}
+  <link rel="canonical" href={canonical} />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta property="og:type" content={isProfile ? 'profile' : 'website'} />
+  <meta property="og:site_name" content={profile.name} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:locale" content="en_US" />
+  {image === "/og/default.jpg" && <meta property="og:image:width" content="1200" />}
+  {image === "/og/default.jpg" && <meta property="og:image:height" content="630" />}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
+  {isProfile && <link rel="preload" as="image" href="/hero-poster.webp" />}
+  <script type="application/ld+json" set:html={JSON.stringify(structuredData).replace(/</g, "\\u003c")} />
+</head>
+<body data-route={route.startsWith('/about/') ? 'about' : route.startsWith('/contact/') ? 'contact' : 'other'}>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="noise-layer" aria-hidden="true"></div>
+  <header class="site-header" id="site-header">
+    <a class="brand" href="/" aria-label={`${profile.name} — home`}><span class="brand-mark">T<span class="brand-mark-dot">.</span></span><span class="brand-copy">TAFSEER <span class="brand-separator">/</span> SOFTWARE ENGINEER</span></a>
+    <button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav" data-menu-toggle><span></span><span></span></button>
+    <nav class="nav" id="primary-nav" aria-label="Main navigation">
+      <a href="/work/" aria-current={route.startsWith('/work/') || route.startsWith('/projects/') ? 'page' : undefined}>Work</a>
+      <a href="/about/" aria-current={route.startsWith('/about/') ? 'page' : undefined}>About</a>
+      <a href="/contact/" aria-current={route.startsWith('/contact/') ? 'page' : undefined}>Contact</a>
+    </nav>
+    {!route.startsWith('/contact/') && <a class="header-cta" href="/contact/">LET'S CONNECT <span aria-hidden="true">↗</span></a>}
+  </header>
+  <main id="main"><slot /></main>
+  <footer class="site-footer site-footer--editorial">
+    {!route.startsWith('/contact/') && (
+      <div class="footer-invitation container" data-reveal>
+        <p class="footer-invitation-kicker"><span class="footer-signal" aria-hidden="true"></span> HAVE SOMETHING IN MIND?</p>
+        <a class="footer-invitation-link" href="/contact/" aria-label="Let's talk about your project">
+          <span>LET'S <em>TALK.</em></span><span class="footer-invitation-arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
+    )}
+    <div class="footer-main container" data-reveal>
+      <div class="footer-identity">
+        <a class="footer-brand" href="/">SYED MUHAMMAD <strong>TAFSEER<span class="accent">.</span></strong><span class="footer-surname">RAZA BUKHARI</span></a>
+        <p>Software Engineer <span class="accent">/</span> Full-Stack Product Builder</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <span class="footer-nav-label">EXPLORE</span>
+        <a href="/work/">WORK <span aria-hidden="true">↗</span></a>
+        <a href="/about/">ABOUT <span aria-hidden="true">↗</span></a>
+        <a href="/contact/">CONTACT <span aria-hidden="true">↗</span></a>
+        {profile.links.github.startsWith('https://') && <a href={profile.links.github} target="_blank" rel="noopener noreferrer">GITHUB <span aria-hidden="true">↗</span></a>}
+      </nav>
+    </div>
+    <div class="footer-bottom container"><span>© {new Date().getFullYear()} {profile.name}</span><span>KARACHI, PAKISTAN</span><a href="/privacy/">PRIVACY</a><a href="#main">BACK TO TOP ↑</a></div>
+  </footer>
+  <script>
+    import '../scripts/site.ts';
+    if (document.querySelector('[data-hero], [data-reveal]')) { import('../scripts/motion.ts'); }
+    if (document.querySelector('[data-skill-field]')) { import('../scripts/home-interactions.ts'); }
+    if (document.querySelector('[data-copy-email]')) { import('../scripts/contact-interactions.ts'); }
+    if (document.querySelector('[data-page-interactions]')) { import('../scripts/page-interactions.ts'); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { profile } from '../../data/profile';
+import { workShowcase, workImageCaption } from '../../data/workShowcase';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  // All published project entries are content-driven.
+  return projects.map((project) => ({ params: { slug: project.id }, props: { project } }));
+}
+interface Props { project: CollectionEntry<'projects'>; }
+const { project } = Astro.props;
+const { Content } = await render(project);
+const data = project.data;
+const { title, summary, category, role, year, cover, gallery, tech, status, liveUrl, repoUrl } = data;
+const presentation = workShowcase[project.id];
+const isTradeMind = project.id === 'trademind';
+const isLibrary = project.id === 'librarydesk-winforms';
+const isOmnisyllabo = project.id === 'omnisyllabo';
+const media = gallery.filter((x): x is string => typeof x === 'string' && x.length > 0);
+const portraitMedia = (src: string) => /(?:09-mobile-homepage|mobile[-_])/.test(src);
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  '@id': new URL(`/projects/${project.id}/#project`, Astro.site ?? Astro.url.origin).toString(),
+  name: title,
+  description: summary,
+  creator: { '@type': 'Person', '@id': new URL('/#person', Astro.site ?? Astro.url.origin).toString(), name: profile.name },
+  url: new URL(`/projects/${project.id}/`, Astro.site ?? Astro.url.origin).toString(),
+  ...(cover ? { image: new URL(cover, Astro.site ?? Astro.url.origin).toString() } : {}),
+  ...((repoUrl || liveUrl) ? { sameAs: [repoUrl, liveUrl].filter(Boolean) } : {}),
+};
+const currentProjects = (await getCollection('projects')).filter(item => item.data.status !== 'Case study in preparation').sort((a,b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title));
+const position = currentProjects.findIndex(item => item.id === project.id);
+const nextProject = position >= 0 && currentProjects.length > 1 ? currentProjects[(position + 1) % currentProjects.length] : undefined;
+const nextSlug = nextProject?.id;
+const categoryLabel = presentation?.type ?? category;
+const availability = presentation?.availability ?? status;
+const mediaCaption = presentation?.note ?? (isOmnisyllabo ? 'Screenshots supplied by the project owner.' : 'Real screenshots from the public project repository.');
+---
+<BaseLayout title={`${title} — Engineering Case Study | ${profile.name}`} description={`${summary} Learn about the scope, decisions, technology and results of this project by ${profile.name}.`} image={cover?.startsWith("/") ? cover : "/og/default.jpg"}>
+  <script type="application/ld+json" set:html={JSON.stringify(pageSchema).replace(/</g, "\\u003c")} />
+  <article class="case-detail" aria-labelledby="case-title">
+    <header class="container case-header">
+      <nav class="case-crumb" aria-label="Breadcrumb"><a href="/work/">WORK</a><span aria-hidden="true">/</span><span>{title.toUpperCase()}</span></nav>
+      <div class="case-header-grid" data-reveal>
+        <div class="case-title-block"><p class="section-kicker">{categoryLabel} <span class="case-red">/</span> {availability}</p><h1 id="case-title">{title}<em>.</em></h1><p class="case-deck">{summary}</p>
+          <div class="case-quick-actions" aria-label="Project links">
+            {liveUrl && <a href={liveUrl} target="_blank" rel="noopener noreferrer">{isLibrary ? 'DOWNLOAD WINDOWS APP' : 'VISIT LIVE PROJECT'} <span aria-hidden="true">↗</span></a>}
+            {repoUrl && <a href={repoUrl} target="_blank" rel="noopener noreferrer">GITHUB / SOURCE <span aria-hidden="true">↗</span></a>}
+            {isTradeMind && <span class="case-availability-note">PRIVATE RESEARCH — NO PUBLIC DEMO</span>}
+          </div>
+        </div>
+        <div class="case-header-aside"><span>THE PROJECT</span><p>{presentation?.short ?? 'Project details, implementation and technical context.'}</p><a href="#case-story">READ THE CASE STUDY <span aria-hidden="true">↓</span></a></div>
+      </div>
+    </header>
+
+    <div class="container case-lead-media">
+      <div class="case-cover">
+        <span class="case-cover-backdrop" aria-hidden="true">{title}</span>
+        {cover ? <img src={cover} alt={isTradeMind ? 'TradeMind illustrated interface concept' : `${title} application screenshot`} loading="eager" decoding="async" data-portfolio-image/> : <div class="case-cover-placeholder">{title}</div>}
+        <span class="case-cover-label">{isTradeMind ? 'ILLUSTRATIVE INTERFACE CONCEPT' : isOmnisyllabo ? 'OMNISYLLABO INTERFACE' : 'APPLICATION SCREENSHOT'}</span>
+      </div>
+      {isTradeMind && <p class="case-visual-disclaimer">Interface concept only. Illustrative figures, dates and labels within the image do not represent verified platform statistics or a public deployment.</p>}
+    </div>
+
+    <div class="container case-facts" aria-label="Project facts">
+      <div><span>PROJECT TYPE</span><strong>{category}</strong></div>
+      <div><span>MY ROLE</span><strong>{role}</strong></div>
+      <div><span>PERIOD</span><strong>{year}</strong></div>
+      <div><span>AVAILABILITY</span><strong>{availability}</strong></div>
+    </div>
+
+    <section class="container case-story-grid" id="case-story">
+      <aside class="case-sidebar"><p class="section-kicker">THE ENGINEERING STORY</p><span class="case-aside-line" aria-hidden="true"></span><p>Context, technical decisions and honest project scope.</p><a href="/work/">← BACK TO ALL WORK</a></aside>
+      <div class="case-content"><Content />
+        {tech.length > 0 && <section class="case-tech" aria-labelledby="case-tech-title"><h2 id="case-tech-title">Technologies & disciplines</h2><div>{tech.map((item) => <span>{item}</span>)}</div></section>}
+
+      </div>
+    </section>
+
+    {media.length > 0 && <section class="container case-gallery-section" aria-labelledby="case-gallery-title">
+      <div class="case-gallery-head"><p class="section-kicker">PROJECT DOCUMENTATION</p><h2 id="case-gallery-title">VISUAL <em>STORY.</em></h2><p>{mediaCaption}</p></div>
+      <div class="case-gallery-grid">
+        {media.map((src, index) => <figure class:list={["case-gallery-item", portraitMedia(src) && "case-gallery-item--portrait"]}>
+          <a href={src} target="_blank" rel="noopener noreferrer" aria-label={`Open ${title} image ${index + 1} in a new tab`}>
+            <span class="case-gallery-fallback" aria-hidden="true">PREVIEW UNAVAILABLE · OPEN SOURCE ↗</span><img src={src} alt={workImageCaption(project.id,index,src)} loading="lazy" decoding="async" data-portfolio-image />
+            <span class="case-gallery-open" aria-hidden="true">↗</span>
+          </a>
+          <figcaption><span>{workImageCaption(project.id,index,src)}</span></figcaption>
+        </figure>)}
+      </div>
+      <p class="case-gallery-source">{isTradeMind ? 'TradeMind visuals were supplied by the project owner and are marked as design concepts.' : isOmnisyllabo ? 'Screenshots supplied by the project owner.' : 'Screenshots linked from the corresponding public GitHub repository; external availability may change.'}</p>
+    </section>}
+
+    <nav class="container case-footer-nav" aria-label="Case study navigation">
+      <a href="/work/"><span>EXPLORE THE COLLECTION</span><strong>ALL PROJECTS <em>↗</em></strong></a>
+      {nextSlug && <a href={`/projects/${nextSlug}/`}><span>VIEW ANOTHER PROJECT</span><strong>{nextProject?.data.title ?? nextSlug} <em>↗</em></strong></a>}
+    </nav>
+  </article>
+</BaseLayout>
+<script>
+  document.querySelectorAll<HTMLImageElement>('[data-portfolio-image]').forEach((img) => {
+    const fail = () => img.classList.add('is-unavailable');
+    img.addEventListener('error', fail, { once: true });
+    if (img.complete && img.naturalWidth === 0) fail();
+  });
+</script>
+
+<style>
+  .case-detail{overflow:hidden}
+  .case-header{padding-top:134px;padding-bottom:43px}
+  .case-crumb{display:flex;gap:14px;align-items:center;color:#c1b0b5;font-size:11px;font-weight:900;letter-spacing:.14em}
+  .case-crumb a{transition:color .2s}.case-crumb a:hover{color:var(--red)}.case-crumb span:nth-child(2){color:var(--red)}
+  .case-header-grid{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:36px;align-items:end;margin-top:42px}
+  .case-red{color:var(--red)}
+  .case-title-block h1{font:900 clamp(58px,8vw,124px)/.95 Impact,'Arial Narrow',Arial,sans-serif;text-transform:uppercase;letter-spacing:-.05em;margin:17px 0 27px;overflow-wrap:anywhere}
+  .case-title-block h1 em{font-style:normal;color:var(--red)}
+  .case-deck{font-size:clamp(17px,2vw,27px);line-height:1.47;color:#d9cbce;max-width:880px;margin:0}
+  .case-header-aside{border-top:1px solid rgba(255,255,255,.25);padding-top:20px}
+  .case-header-aside>span{color:var(--red);font-size:10px;letter-spacing:.15em;font-weight:900}
+  .case-header-aside p{color:#b6a9ac;font-size:13px;line-height:1.7}
+  .case-header-aside a{display:flex;justify-content:space-between;gap:17px;border-bottom:1px solid var(--red);padding:18px 0 14px;font-size:10px;font-weight:900;letter-spacing:.07em}
+  .case-header-aside a span{font-size:17px;color:var(--red)}
+  .case-lead-media{position:relative}
+  .case-cover{background:linear-gradient(125deg,#151924,#0b1017);border:1px solid rgba(255,255,255,.18);overflow:hidden;position:relative;height:clamp(240px,32vw,425px);max-height:425px}
+  .case-cover img{width:100%;height:100%;object-fit:contain;object-position:center;position:relative;z-index:1}.case-cover-backdrop{position:absolute;inset:0;display:grid;place-items:center;font:900 clamp(42px,8vw,125px) Impact,Arial,sans-serif;color:#826b75;text-transform:uppercase;text-align:center;padding:24px;overflow-wrap:anywhere}
+  .case-cover::after{position:absolute;inset:85% 0 0;content:'';pointer-events:none;background:linear-gradient(0deg,rgba(3,4,6,.32),transparent)}
+  .case-cover-placeholder{height:100%;display:grid;place-items:center;font:900 clamp(55px,10vw,160px) Impact,'Arial Narrow',Arial,sans-serif}
+  .case-cover-label{position:absolute;bottom:26px;left:30px;z-index:2;font-size:10px;font-weight:900;letter-spacing:.12em;color:white;text-shadow:0 1px 9px #000}
+  .case-visual-disclaimer{background:#181114;border-left:3px solid var(--red);font-size:12px;line-height:1.6;color:#d0bec2;padding:13px 22px;margin:15px 0 0}
+  .case-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:26px;padding-top:36px;padding-bottom:38px;border-bottom:1px solid rgba(255,255,255,.17)}
+  .case-facts>div{border-top:1px solid rgba(255,255,255,.23);padding-top:19px}
+  .case-facts span{font-size:10px;font-weight:900;letter-spacing:.13em;color:var(--red);display:block;margin-bottom:13px}
+  .case-facts strong{font-size:14px;font-weight:700;line-height:1.6;color:#f0e6e8}
+  .case-story-grid{display:grid;grid-template-columns:minmax(0,.34fr) minmax(0,1fr);gap:55px;padding-top:76px;padding-bottom:86px}
+  .case-sidebar{align-self:start;position:sticky;top:110px}
+  .case-sidebar .section-kicker{color:#d9cbd0}.case-aside-line{display:block;width:50px;height:2px;background:var(--red);margin:28px 0}
+  .case-sidebar>p:nth-last-child(2){max-width:230px;font-size:14px;line-height:1.8;color:#ac9da2}
+  .case-sidebar>a{margin-top:45px;display:inline-block;font-size:11px;letter-spacing:.09em;font-weight:900;border-bottom:1px solid var(--red);padding:12px 0}
+  .case-content{min-width:0;max-width:910px}
+  .case-content :global(h2){font:900 clamp(30px,3.7vw,55px)/1.08 Impact,'Arial Narrow',Arial,sans-serif;letter-spacing:-.018em;text-transform:uppercase;margin:52px 0 21px;color:#f3ecee}
+  .case-content :global(h2:first-child){margin-top:0}
+  .case-content :global(p){font-size:16px;line-height:1.92;color:#c0b1b7;margin:0 0 24px}
+  .case-content :global(strong){font-weight:850;color:#eee5e7}
+  .case-content :global(ul){list-style:none;padding:0;margin:22px 0 32px}
+  .case-content :global(li){position:relative;padding:0 0 12px 22px;color:#c8b9bf;line-height:1.8;font-size:15px}
+  .case-content :global(li::before){position:absolute;content:'↗';left:0;top:0;color:var(--red);font-weight:900}
+  .case-tech{margin-top:75px;border-top:1px solid rgba(255,255,255,.2);padding-top:14px}
+  .case-tech>div{display:flex;gap:9px;flex-wrap:wrap;margin-top:25px}
+  .case-tech>div span{border:1px solid rgba(255,255,255,.27);background:rgba(255,255,255,.025);padding:10px 13px;font-size:11px;color:#e1d0d3;letter-spacing:.03em}
+  .case-cta-row{display:flex;gap:17px;flex-wrap:wrap;align-items:center;margin-top:65px;padding:30px 0;border-top:1px solid rgba(255,255,255,.18)}
+  .case-action{display:inline-flex;align-items:center;justify-content:space-between;gap:20px;min-width:210px;padding:18px 19px;border:1px solid rgba(255,255,255,.4);font-weight:900;font-size:10px;letter-spacing:.1em;transition:background .2s,border-color .2s}
+  .case-action span{color:var(--red);font-size:19px}
+  .case-action:hover{border-color:var(--red);background:rgba(236,62,77,.12)}
+  .case-private-note{font-size:11px;letter-spacing:.13em;color:#baa8ad;border-left:2px solid var(--red);padding:14px}
+  .case-gallery-section{padding-bottom:80px}
+  .case-gallery-head{border-top:1px solid rgba(255,255,255,.2);padding-top:32px;display:grid;grid-template-columns:1fr auto;gap:0 45px;align-items:end;margin-bottom:35px}
+  .case-gallery-head>.section-kicker{grid-column:1/-1}
+  .case-gallery-head h2{font:900 clamp(46px,6vw,110px)/1 Impact,'Arial Narrow',Arial,sans-serif;margin:16px 0;letter-spacing:-.04em}
+  .case-gallery-head h2 em{font-style:normal;color:transparent;-webkit-text-stroke:1.6px var(--red)}
+  .case-gallery-head>p:last-child{max-width:320px;font-size:12px;line-height:1.7;color:#ae9ca1}
+  .case-gallery-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px}
+  .case-gallery-item{margin:0;min-width:0}
+  .case-gallery-item--lead{grid-column:auto}
+  .case-gallery-item>a{display:grid;place-items:center;position:relative;overflow:hidden;aspect-ratio:1.65;background:#111722;border:1px solid rgba(255,255,255,.18)}
+  .case-gallery-item--lead>a{aspect-ratio:1.65}
+  .case-gallery-item img{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;object-position:center;transition:none}.case-gallery-fallback{position:absolute;inset:0;display:grid;place-items:center;text-transform:uppercase;font:900 clamp(28px,3.4vw,50px) Impact,Arial,sans-serif;color:#806875;text-align:center;word-break:break-word;padding:20px}
+  .case-gallery-item a:hover img{transform:none}
+  .case-gallery-open{position:absolute;z-index:2;right:14px;top:14px;width:42px;height:42px;background:rgba(6,5,8,.8);border:1px solid rgba(255,255,255,.4);display:grid;place-items:center;font-size:19px;color:var(--red)}
+  .case-gallery-item--portrait{grid-column:auto;justify-self:center;max-width:300px;width:100%}
+  .case-gallery-item--portrait>a{aspect-ratio:9/16;max-height:480px}
+  .case-gallery-item img.is-unavailable,.case-cover img.is-unavailable{display:none}
+  .case-quick-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:28px}
+  .case-quick-actions a{display:inline-flex;gap:22px;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.42);padding:14px 17px;font-size:11px;letter-spacing:.07em;font-weight:800;transition:border-color .2s,background .2s}
+  .case-quick-actions a:hover,.case-quick-actions a:focus-visible{border-color:#f05b61;background:rgba(238,65,77,.10)}
+  .case-quick-actions a span{color:var(--red);font-size:17px}
+  .case-availability-note{font-size:11px;color:#ccbbc0;line-height:1.5}
+  .case-gallery-item figcaption{display:flex;gap:12px;font-size:11px;color:#aaa0a2;line-height:1.7;margin-top:13px}
+  .case-gallery-item figcaption span:first-child{color:var(--red);font-weight:900}
+  .case-gallery-source{font-size:12px;line-height:1.7;color:#a9989e;margin-top:35px}
+  .case-footer-nav{padding-bottom:125px;display:flex;border-top:1px solid rgba(255,255,255,.2);padding-top:30px;gap:40px;justify-content:space-between}
+  .case-footer-nav a{display:block;max-width:48%;min-width:0}
+  .case-footer-nav a span{font-size:10px;font-weight:850;letter-spacing:.15em;color:#b09da4}
+  .case-footer-nav a strong{display:block;margin-top:17px;font:900 clamp(30px,4.5vw,75px)/1.05 Impact,'Arial Narrow',Arial,sans-serif;text-transform:uppercase;letter-spacing:-.02em;overflow-wrap:anywhere}
+  .case-footer-nav a em{color:var(--red);font-style:normal}
+  .case-footer-nav a:hover strong{color:var(--red)}
+  @media(max-width:1024px){.case-header-grid{grid-template-columns:1fr}.case-header-aside{max-width:450px}.case-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.case-story-grid{grid-template-columns:1fr;gap:35px}.case-sidebar{position:static}.case-sidebar>a{margin-top:8px}}
+  @media(max-width:768px){
+    .case-header{padding-top:130px;padding-bottom:38px}.case-header-grid{margin-top:38px;gap:20px}.case-title-block h1{font-size:clamp(54px,13.5vw,106px)}.case-deck{font-size:16px}
+    .case-cover{height:clamp(205px,59vw,310px)}.case-cover-label{font-size:8px;left:14px;bottom:12px}
+    .case-facts{gap:16px;padding-top:18px}.case-facts strong{font-size:12px}
+    .case-story-grid{padding-top:76px;padding-bottom:68px}.case-content :global(h2){font-size:clamp(30px,8vw,45px)}.case-content :global(p){font-size:14px;line-height:1.85}.case-content :global(li){font-size:13px}
+    .case-gallery-section{padding-bottom:75px}.case-gallery-head{display:block}.case-gallery-head h2{font-size:clamp(47px,12vw,76px)}
+    .case-gallery-grid{grid-template-columns:1fr;gap:28px}.case-gallery-item--lead{grid-column:auto}.case-gallery-item>a,.case-gallery-item--lead>a{aspect-ratio:1.5;max-height:300px}.case-gallery-item--portrait>a{aspect-ratio:9/16;max-height:460px}
+    .case-footer-nav{padding-bottom:80px}.case-footer-nav a strong{font-size:clamp(30px,7vw,50px)}
+  }
+  @media(max-width:390px){.case-title-block h1{font-size:clamp(49px,12vw,69px)}.case-facts{grid-template-columns:1fr 1fr}.case-footer-nav{gap:12px}.case-footer-nav a{max-width:50%}.case-footer-nav a strong{font-size:25px}}
+  @media(prefers-reduced-motion:reduce){.case-gallery-item img,.case-action{transition:none!important}}
+</style>
