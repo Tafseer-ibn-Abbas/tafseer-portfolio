@@ -29,7 +29,7 @@ function initHero() {
   visual.style.background = "#13090d url('/hero-ambient.webp') center / cover no-repeat";
   wrap.classList.add('is-sequence-active');
   type Frame = ImageBitmap | HTMLImageElement;
-  type Inflight = { controller: AbortController | null; image: HTMLImageElement | null };
+  type Inflight = { controller: AbortController | null; image: HTMLImageElement | null; decoding: boolean };
   // HQ frames are extracted directly from the supplied ORIGINAL 24fps movie.
   // 240 real desktop frames, with every second frame for 12fps mobile.
   // Keep the original 420 JPEG assets untouched as a rollback baseline.
@@ -56,6 +56,20 @@ function initHero() {
   const loaded = new Map<number, Frame>();
   const pending = new Map<number, Inflight>();
   const retryAfter = new Map<number, number>();
+  // Lightweight HQ-derived scrub atlases: a decoded frame is always available
+  // close to a fast scroll target, even before its exact WebP finishes decoding.
+  // Exact original WebP frames remain primary and unchanged.
+  const atlases = new Map<number, ImageBitmap>();
+  const atlasPending = new Map<number, AbortController>();
+  const atlasRetryAfter = new Map<number, number>();
+  let atlasWarmTimer = 0;
+  const atlasStep = 6;
+  const atlasSlots = 6;
+  const atlasCols = 2;
+  const atlasWidth = 1280;
+  const atlasHeight = 720;
+  const atlasCount = () => Math.ceil(Math.ceil(frameCount / atlasStep) / atlasSlots);
+  const targetAtlas = () => Math.floor(Math.round(target / atlasStep) / atlasSlots);
   const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory || 4;
   // Each decoded 1280x720 RGBA frame takes ~3.5 MiB, regardless of JPEG size.
   // Preserve sparse HQ anchors across the 10-second timeline. Fast wheel
@@ -65,6 +79,8 @@ function initHero() {
   // Bound concurrent *decodes*, not just fetch starts. More parallel WebP
   // decodes can contend with scrolling, particularly on mobile CPUs.
   const maxInflight = () => deviceMemory <= 2 ? 2 : (mobile ? 3 : 4);
+  const maxAtlases = () => deviceMemory <= 2 ? 2 : (mobile ? 3 : deviceMemory >= 8 ? 7 : 5);
+  const atlasPath = (page: number) => `/frames/hero-atlas/${mobile ? 'mobile' : 'desktop'}/page-${String(page).padStart(2, '0')}.webp`;
   const framePath = (index: number) => `/frames/hero-hq/${mobile ? 'mobile' : 'desktop'}/${String(index + 1).padStart(4, '0')}.webp`;
   const frameWidth = (frame: Frame) => frame instanceof HTMLImageElement ? frame.naturalWidth : frame.width;
   const frameHeight = (frame: Frame) => frame instanceof HTMLImageElement ? frame.naturalHeight : frame.height;
@@ -87,6 +103,8 @@ function initHero() {
         primedTarget = target;
         cancelDistantRequests();
         prime();
+        primeAtlas();
+        scheduleAtlasWarm();
       }
       draw();
     });
@@ -112,6 +130,93 @@ function initHero() {
       lastDrawn = -1;
       scheduleDraw();
     }
+  }
+
+  function trimAtlases() {
+    while (atlases.size > maxAtlases()) {
+      const center = targetAtlas();
+      let oldPage = -1;
+      let furthest = -1;
+      for (const page of atlases.keys()) {
+        const distance = Math.abs(page - center);
+        if (distance >= furthest) { furthest = distance; oldPage = page; }
+      }
+      if (oldPage < 0) break;
+      atlases.get(oldPage)?.close();
+      atlases.delete(oldPage);
+    }
+  }
+
+  async function loadAtlas(page: number) {
+    if (destroyed || page < 0 || page >= atlasCount() || atlases.has(page) || atlasPending.has(page) || atlasPending.size >= 1 || Date.now() < (atlasRetryAfter.get(page) || 0)) return;
+    const sourceGeneration = generation;
+    const controller = new AbortController();
+    atlasPending.set(page, controller);
+    let bitmap: ImageBitmap | null = null;
+    try {
+      const response = await fetch(atlasPath(page), { signal: controller.signal });
+      if (!response.ok) throw new Error(`Atlas HTTP ${response.status}`);
+      bitmap = await createImageBitmap(await response.blob());
+      if (destroyed || generation !== sourceGeneration || controller.signal.aborted) return;
+      atlases.set(page, bitmap);
+      atlasRetryAfter.delete(page);
+      bitmap = null;
+      trimAtlases();
+      scheduleDraw();
+    } catch {
+      // If CDN or browser cannot decode an atlas, retry later without a
+      // request loop. Exact original frame loading continues unaffected.
+      if (!controller.signal.aborted) atlasRetryAfter.set(page, Date.now() + 5000);
+    } finally {
+      bitmap?.close();
+      if (atlasPending.get(page) === controller) atlasPending.delete(page);
+      if (!destroyed && generation === sourceGeneration) primeAtlas();
+    }
+  }
+
+  function primeAtlas() {
+    if (destroyed || document.hidden || atlasPending.size >= 1 || !('createImageBitmap' in window)) return;
+    const current = targetAtlas();
+    if (!atlases.has(current) && !atlasPending.has(current) && Date.now() >= (atlasRetryAfter.get(current) || 0)) {
+      void loadAtlas(current);
+      return;
+    }
+    // When the atlas cache is full, wait until the scroll target changes.
+    // Otherwise an idle loop could repeatedly evict and re-download pages.
+    if (atlases.size >= maxAtlases()) return;
+    // During active input, leave the spare decode lane for the exact frames.
+    if (performance.now() - movedAt < 300) return;
+    // Slowly fill a distributed set for return/reverse scrolling, never
+    // scheduling multiple large canvas uploads in a single animation tick.
+    for (let i = 0; i < atlasCount(); i++) {
+      const page = (current + i) % atlasCount();
+      if (!atlases.has(page) && !atlasPending.has(page) && Date.now() >= (atlasRetryAfter.get(page) || 0)) {
+        void loadAtlas(page);
+        break;
+      }
+    }
+  }
+
+  function scheduleAtlasWarm() {
+    window.clearTimeout(atlasWarmTimer);
+    if (destroyed || document.hidden) return;
+    atlasWarmTimer = window.setTimeout(() => {
+      primeAtlas();
+      if (atlases.size < Math.min(atlasCount(), maxAtlases())) scheduleAtlasWarm();
+    }, 350);
+  }
+
+  function nearestAtlas() {
+    let best: { page: number; slot: number; index: number; distance: number } | null = null;
+    for (const page of atlases.keys()) {
+      for (let slot = 0; slot < atlasSlots; slot++) {
+        const index = (page * atlasSlots + slot) * atlasStep;
+        if (index >= frameCount) break;
+        const distance = Math.abs(index - target);
+        if (!best || distance < best.distance) best = { page, slot, index, distance };
+      }
+    }
+    return best;
   }
 
   function trimCache() {
@@ -176,9 +281,11 @@ function initHero() {
     // createImageBitmap() jobs under rapid wheel/touch scrolling.
     const threshold = Math.max(mobile ? 13 : 22, lookAhead + 6);
     for (const [index, request] of pending) {
-      if (!pinnedFrames.has(index) && Math.abs(index - target) > threshold) {
-        request.controller?.abort();
-        if (request.image) request.image.src = '';
+      // Don't sabotage a decode after fetch completed: its result can be
+      // reused on reverse scroll. The atlas provides fast jump coverage.
+      if (!pinnedFrames.has(index) && Math.abs(index - target) > threshold &&
+          request.controller && !request.decoding && !request.controller.signal.aborted) {
+        request.controller.abort();
       }
     }
   }
@@ -187,7 +294,7 @@ function initHero() {
     if (destroyed || index < 0 || index >= frameCount || loaded.has(index) || pending.has(index) || pending.size >= maxInflight()) return;
     if (Date.now() < (retryAfter.get(index) || 0)) return;
     const sourceGeneration = generation;
-    const request: Inflight = { controller: null, image: null };
+    const request: Inflight = { controller: null, image: null, decoding: false };
     pending.set(index, request);
     let frame: Frame | null = null;
     try {
@@ -197,7 +304,9 @@ function initHero() {
         request.controller = new AbortController();
         const response = await fetch(framePath(index), { signal: request.controller.signal });
         if (!response.ok) throw new Error(`Frame HTTP ${response.status}`);
-        frame = await createImageBitmap(await response.blob());
+        const blob = await response.blob();
+        request.decoding = true;
+        frame = await createImageBitmap(blob);
       } else {
         // Safari/older browser fallback: decode() still avoids draw-time decoding.
         const image = new Image();
@@ -208,8 +317,7 @@ function initHero() {
         frame = image;
       }
       if (destroyed || generation !== sourceGeneration || pending.get(index) !== request ||
-        request.controller?.signal.aborted || (!pinnedFrames.has(index) &&
-          Math.abs(index - target) > (mobile ? 20 : 30))) {
+        request.controller?.signal.aborted) {
         if (frame) dispose(frame);
         return;
       }
@@ -242,7 +350,7 @@ function initHero() {
       let distance = 0;
       for (const [index, request] of pending) {
         const away = Math.abs(index - target);
-        if (!pinnedFrames.has(index) && !request.controller?.signal.aborted && away > distance) {
+        if (!pinnedFrames.has(index) && !request.decoding && !request.controller?.signal.aborted && away > distance) {
           farthest = index;
           distance = away;
         }
@@ -286,12 +394,15 @@ function initHero() {
       }
     }
     const frame = exact || loaded.get(index);
-    if (!frame || index === lastDrawn) return;
+    const atlas = !exact ? nearestAtlas() : null;
+    const useAtlas = atlas && (!frame || atlas.distance < Math.abs(index - target));
+    const renderId = useAtlas ? -(atlas.index + 1001) : index;
+    if ((!frame && !useAtlas) || renderId === lastDrawn) return;
     const width = canvasWidth;
     const height = canvasHeight;
     if (width <= 1 || height <= 1) return;
-    const sourceWidth = frameWidth(frame);
-    const sourceHeight = frameHeight(frame);
+    const sourceWidth = useAtlas ? atlasWidth : frameWidth(frame!);
+    const sourceHeight = useAtlas ? atlasHeight : frameHeight(frame!);
     if (!sourceWidth || !sourceHeight) return;
     const cover = Math.max(width / sourceWidth, height / sourceHeight);
     const scale = Math.min(cover, mobile ? 1.08 : 1.0);
@@ -304,8 +415,16 @@ function initHero() {
     }
     const y = (height - imageHeight) / 2;
     ctx!.clearRect(0, 0, width, height);
-    ctx!.drawImage(frame, x, y, imageWidth, imageHeight);
-    lastDrawn = index;
+    if (useAtlas) {
+      const page = atlases.get(atlas.page);
+      if (!page) return;
+      const sx = (atlas.slot % atlasCols) * atlasWidth;
+      const sy = Math.floor(atlas.slot / atlasCols) * atlasHeight;
+      ctx!.drawImage(page, sx, sy, atlasWidth, atlasHeight, x, y, imageWidth, imageHeight);
+    } else {
+      ctx!.drawImage(frame!, x, y, imageWidth, imageHeight);
+    }
+    lastDrawn = renderId;
     canvas!.classList.add('is-ready');
     poster?.classList.add('is-hidden');
   }
@@ -366,7 +485,13 @@ function initHero() {
     frameCount = mobile ? 120 : 240;
     generation++;
     window.clearTimeout(warmTimer);
+    window.clearTimeout(atlasWarmTimer);
     warmQueue = [];
+    for (const controller of atlasPending.values()) controller.abort();
+    atlasPending.clear();
+    atlasRetryAfter.clear();
+    for (const bitmap of atlases.values()) bitmap.close();
+    atlases.clear();
     pinnedFrames.clear();
     for (const request of pending.values()) {
       request.controller?.abort();
@@ -388,6 +513,8 @@ function initHero() {
     resizeCanvas();
     prime();
     warmAnchors();
+    primeAtlas();
+    scheduleAtlasWarm();
     scheduleDraw();
   }
 
@@ -416,12 +543,18 @@ function initHero() {
     }, 160);
   }, { passive: true });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { prime(); warmAnchors(); scheduleDraw(); }
+    if (!document.hidden) { prime(); warmAnchors(); primeAtlas(); scheduleAtlasWarm(); scheduleDraw(); }
   });
   window.addEventListener('pagehide', () => {
     destroyed = true;
     window.clearTimeout(warmTimer);
+    window.clearTimeout(atlasWarmTimer);
     resizeObserver?.disconnect();
+    for (const controller of atlasPending.values()) controller.abort();
+    atlasPending.clear();
+    atlasRetryAfter.clear();
+    for (const bitmap of atlases.values()) bitmap.close();
+    atlases.clear();
     if (scheduled) cancelAnimationFrame(scheduled);
     for (const request of pending.values()) {
       request.controller?.abort();
