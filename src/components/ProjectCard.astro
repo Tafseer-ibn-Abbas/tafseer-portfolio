@@ -18,3 +18,12 @@ const { title, summary, category, year, cover } = project.data;
   :global(.project-art--omnisyllabo) { background: radial-gradient(ellipse at 60% 45%, #192035 0%, #080d16 80%); }
   @media (hover:hover) { :global(.project-card:hover .project-art--omnisyllabo > img) { transform: none; } }
 </style>
+
+<script>
+  // Home project image fallback: retain the card background if a preview fails.
+  document.querySelectorAll<HTMLImageElement>('.project-card .project-art > img').forEach((img) => {
+    const handleFailure = () => img.remove();
+    img.addEventListener('error', handleFailure, { once: true });
+    if (img.complete && img.naturalWidth === 0) handleFailure();
+  });
+</script>

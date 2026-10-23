@@ -14,9 +14,10 @@ if (button && nav) {
     button.setAttribute('aria-label', 'Open navigation');
   }));
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && nav.classList.contains('is-open')) {
       nav.classList.remove('is-open');
       button.setAttribute('aria-expanded','false');
+      button.setAttribute('aria-label', 'Open navigation');
       button.focus();
     }
   });
