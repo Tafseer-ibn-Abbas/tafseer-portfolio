@@ -1,39 +1,48 @@
-# Syed Muhammad Tafseer Raza Bukhari — portfolio
+# Syed Muhammad Tafseer Raza Bukhari — Portfolio
 
-A cinematic, accessibility-conscious Astro personal website. This clean reconstruction preserves the established V10 hero/look, makes the 32-skill toolkit a bounded elliptical 3D-style floating cluster, and brings in the approved six-profile Contact page. This is **not** a new paid-template dependency or an unrelated redesign.
+Production personal portfolio built with Astro 6, TypeScript, GSAP, ScrollTrigger, Lenis and native CSS.
 
-## Technologies
+## Current pages
 
-Astro 6, TypeScript, GSAP + ScrollTrigger, Lenis (desktop only), native CSS and small DOM interaction code. No Three.js, database, paid animation library, or UI-framework overhead.
+- Home: cinematic scroll hero, featured projects and engineering toolkit.
+- About: background, education, experience and engineering approach.
+- Work: eight content-driven project entries with varying case-study detail.
+- Contact: email plus six linked social and freelance profiles.
+- Privacy: current website and hosting information.
 
-## Page status
+## Cinematic hero
 
-| Page | Status |
-|---|---|
-| Home | Complete for content/design QA (subject to real-device browser review) |
-| About | Complete for content/design QA |
-| Contact | Complete for content/design QA; platform links are those provided |
-| Work | Starter index only — **case-study authoring pending** |
-| Project detail | Draft routes — source facts, screenshots and approved links pending |
+The production sequence uses 240 desktop and 120 mobile HQ WebP frames, supported by 11 lightweight scrub atlas pages (7 desktop, 4 mobile). The original legacy JPEG assets remain in the repository.
 
-## What is included
+The HQ sequence is source-derived at 1280 x 720. It is not AI-upscaled or a 4K restoration.
 
-- Full canonical name and supplied alternate names, metadata and JSON-LD person identity.
-- 300 original desktop frames + 120 mobile frames (1280 × 720 JPEG) and poster image.
-- Hero scroll sequence with lazy cache of nearest decoded frames, mobile/native scrolling, chapter text and smooth ticker.
-- Two homepage project teasers and one CTA to the future project catalog.
-- Bounded oval constellation of 32 technical skills: slow irregular individual drift, pointer/touch response, collision handling, no scrolling hijack. Graceful static grid for reduced motion or JS unavailable.
-- About: engineering approach, SSUET BSCS 2024–expected 2028, TechSphere full-stack internship Mar–Apr 2026, public-safe TradeMind mention.
-- Contact: email/Gmail compose, fallback email app, copy-email; LinkedIn, GitHub, Upwork, Fiverr, WhatsApp and Instagram, with platform logos and verified supplied names.
-- Full-length original CSS preserved to prevent the earlier V11 truncation issue.
-- Source and assets integrity checker: `node scripts/verify-project.mjs`.
-- Safe PowerShell update script with per-file backups and SHA256 validation.
+## Local development
 
-For Windows setup and deployment, read [START-HERE.md](START-HERE.md).
+Use Node.js 22.12 or later.
 
-## Known limitations
+    npm ci
+    node scripts/verify-project.mjs
+    npm run build
+    npm run dev
 
-- Source portrait frames are 1280 × 720 JPEGs; pixelation from source compression is not recoverable by CSS alone.
-- Do not treat TradeMind concept art as actual screenshots or hypothetical performance metrics as validated production benchmarks.
-- `/work/` is deliberately a draft until detailed, approved case studies are supplied.
-- Actual `npm run build` and on-device production testing are still required. No unsupported Lighthouse or ranking claims.
+The existing verification script checks legacy portrait assets, key source files, contact links and stylesheet integrity. The production build additionally runs Astro's type checks.
+
+## Production deployment
+
+- Hosting: Cloudflare Pages
+- Production branch: main
+- Build command: npm run build
+- Output directory: dist
+- Environment variable: PUBLIC_SITE_URL=https://smtafseer.pages.dev
+
+The Astro sitemap integration generates sitemap-index.xml. robots.txt points search engines to that sitemap. GitHub Actions checks project integrity and the production build.
+
+## Identity and external links
+
+The primary professional name is Syed Muhammad Tafseer Raza Bukhari. Some linked services retain older display names or usernames. Existing profile URLs are intentionally preserved.
+
+## Project integrity
+
+TradeMind is presented as private engineering and research work. Concept imagery must not be described as verified production screenshots, and no unsupported performance or business metrics should be claimed.
+
+Hero scripts, original image sequences, motion behavior and the global design system should not be modified as part of content or SEO cleanup.

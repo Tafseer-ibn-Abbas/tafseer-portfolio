@@ -1,0 +1,43 @@
+name: Portfolio CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PUBLIC_SITE_URL: https://smtafseer.pages.dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify project
+        run: node scripts/verify-project.mjs
+
+      - name: Verify HQ hero asset counts
+        run: |
+          test "$(find public/frames/hero-hq/desktop -maxdepth 1 -name '*.webp' | wc -l)" -eq 240
+          test "$(find public/frames/hero-hq/mobile -maxdepth 1 -name '*.webp' | wc -l)" -eq 120
+          test "$(find public/frames/hero-atlas/desktop -maxdepth 1 -name '*.webp' | wc -l)" -eq 7
+          test "$(find public/frames/hero-atlas/mobile -maxdepth 1 -name '*.webp' | wc -l)" -eq 4
+
+      - name: Astro production build
+        run: npm run build

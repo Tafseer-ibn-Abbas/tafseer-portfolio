@@ -89,6 +89,7 @@ const appCompose = `mailto:${profile.links.email}?subject=Project%20Inquiry`;
         <p class="section-kicker">03 / ELSEWHERE ONLINE</p>
         <h2 id="social-title">CONNECT<br /><em>ONLINE.</em></h2>
       </div>
+      <p class="reach-social-note">{profile.identityNote}</p>
       <div class="reach-social-grid">
         {socialLinks.map((item) => (
           <a class:list={["reach-social-card", `reach-social-card--${item.brand}`]} href={item.url} target="_blank" rel="noopener noreferrer" aria-label={`${item.name}: ${item.identity} (opens in a new tab)`} data-social-card>
@@ -111,6 +112,7 @@ const appCompose = `mailto:${profile.links.email}?subject=Project%20Inquiry`;
 </BaseLayout>
 
 <style>
+  .reach-social-note { max-width: 760px; margin: -22px 0 40px; color: #cbbcc0; font-size: 14px; line-height: 1.7; }
   :global(.reach-social-card--whatsapp .reach-social-brand) { color: #6fe1a1; }
   :global(.reach-social-card--instagram .reach-social-brand) { color: #f59ac0; }
   :global(.reach-social-card--whatsapp:hover),

@@ -2,6 +2,7 @@
 export const profile = {
   name: 'Syed Muhammad Tafseer Raza Bukhari',
   shortName: 'Tafseer',
+  identityNote: 'My professional name is Syed Muhammad Tafseer Raza Bukhari. Some linked platforms still display earlier names or usernames.',
   alternateNames: [
     'Syed Muhammad Tafseer',
     'SM Tafseer',
