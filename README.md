@@ -1,48 +1,78 @@
-# Syed Muhammad Tafseer Raza Bukhari — Portfolio
+# Tafseer — Personal Portfolio
 
-Production personal portfolio built with Astro 6, TypeScript, GSAP, ScrollTrigger, Lenis and native CSS.
+**Syed Muhammad Tafseer Raza Bukhari**
 
-## Current pages
+Software Engineer · Full-Stack Product Builder
 
-- Home: cinematic scroll hero, featured projects and engineering toolkit.
-- About: background, education, experience and engineering approach.
-- Work: eight content-driven project entries with varying case-study detail.
-- Contact: email plus six linked social and freelance profiles.
-- Privacy: current website and hosting information.
+A personal engineering portfolio showcasing full-stack applications, software systems, and selected projects through a cinematic, interactive web experience.
 
-## Cinematic hero
+[**Live Portfolio**](https://smtafseer.pages.dev/) · [**GitHub**](https://github.com/Tafseer-ibn-Abbas) · [**LinkedIn**](https://www.linkedin.com/in/syed-tafseer-abbas-b61303345/)
 
-The production sequence uses 240 desktop and 120 mobile HQ WebP frames, supported by 11 lightweight scrub atlas pages (7 desktop, 4 mobile). The original legacy JPEG assets remain in the repository.
+---
 
-The HQ sequence is source-derived at 1280 x 720. It is not AI-upscaled or a 4K restoration.
+## About the Portfolio
 
-## Local development
+This portfolio brings together my work in full-stack development, backend systems, databases, desktop applications, and frontend engineering.
 
-Use Node.js 22.12 or later.
+It combines a cinematic visual experience with detailed project case studies, highlighting both the finished interfaces and the engineering decisions behind them.
 
-    npm ci
-    node scripts/verify-project.mjs
-    npm run build
-    npm run dev
+## Highlights
 
-The existing verification script checks legacy portrait assets, key source files, contact links and stylesheet integrity. The production build additionally runs Astro's type checks.
+- Cinematic, scroll-driven hero experience
+- Responsive layouts and interactive motion
+- Eight selected software engineering projects
+- Project case studies covering different technologies and problem domains
+- Accessibility-conscious navigation and interface behavior
+- Search-engine metadata, sitemap, and privacy information
 
-## Production deployment
+## Featured Projects
 
-- Hosting: Cloudflare Pages
-- Production branch: main
-- Build command: npm run build
-- Output directory: dist
-- Environment variable: PUBLIC_SITE_URL=https://smtafseer.pages.dev
+| Project | Focus |
+|---|---|
+| **TradeMind** | Financial data infrastructure and private research |
+| **OmniSyllabo** | Full-stack educational technology |
+| **Beyond Basik** | Responsive client website |
+| **TechSphere** | Full-stack internship application |
+| **HopeLink** | NGO management web application |
+| **LibraryDesk** | Windows desktop software |
+| **EasyBank** | C++ banking system simulation |
+| **SHOS** | Operating systems simulation |
 
-The Astro sitemap integration generates sitemap-index.xml. robots.txt points search engines to that sitemap. GitHub Actions checks project integrity and the production build.
+Explore the complete case studies on the [portfolio website](https://smtafseer.pages.dev/).
 
-## Identity and external links
+## Technology
 
-The primary professional name is Syed Muhammad Tafseer Raza Bukhari. Some linked services retain older display names or usernames. Existing profile URLs are intentionally preserved.
+**Framework:** Astro 6
 
-## Project integrity
+**Language:** TypeScript
 
-TradeMind is presented as private engineering and research work. Concept imagery must not be described as verified production screenshots, and no unsupported performance or business metrics should be claimed.
+**Animation:** GSAP, ScrollTrigger, Lenis
 
-Hero scripts, original image sequences, motion behavior and the global design system should not be modified as part of content or SEO cleanup.
+**Styling:** Native CSS
+
+**Hosting:** Cloudflare Pages
+
+## Reuse and Attribution
+
+The original portfolio source code is available for viewing, learning, modification, and reuse under the conditions described in [LICENSE](LICENSE).
+
+**Attribution to the original author is required when reusing the licensed work.** Publicly deployed derivatives must provide a visible credit and link to the original portfolio.
+
+Original personal information, project-specific materials, and third-party assets may have separate usage restrictions.
+
+See [LICENSE](LICENSE) and [Terms of Use](TERMS_OF_USE.md) for details.
+
+## Author
+
+**Syed Muhammad Tafseer Raza Bukhari**
+
+Software Engineer · Karachi, Pakistan
+
+- **Portfolio:** https://smtafseer.pages.dev/
+- **GitHub:** https://github.com/Tafseer-ibn-Abbas
+- **LinkedIn:** https://www.linkedin.com/in/syed-tafseer-abbas-b61303345/
+- **Email:** tafseeribnabbas@gmail.com
+
+---
+
+© 2026 Syed Muhammad Tafseer Raza Bukhari.
